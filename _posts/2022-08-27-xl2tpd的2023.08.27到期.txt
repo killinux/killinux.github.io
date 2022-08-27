@@ -1,0 +1,383 @@
+xl2tp每年配置一次
+复习一下
+
+[code="java"]
+ios:192.168.2.128
+
+tx:
+外网：124.221.230.97
+eth0 10.0.4.15
+
+aws:
+外网：13.231.175.198
+eth0 172.31.4.255
+[/code]
+
+
+
+aws防火墙，全开
+tx防火墙，全开
+
+
+关键点：
+在tx允许aws 
+[code="java"]
+route add -host 13.231.175.198 dev eth0
+[/code]
+
+####### aws 配置 ############
+aws：
+cat /etc/redhat-release
+Red Hat Enterprise Linux release 8.6 (Ootpa)
+
+ifconfig如果没有
+[code="java"]
+yum install net-tools -y
+yum install iptables -y
+yum install NetworkManager -y
+yum remove firewalld
+[/code]
+
+没有找到
+[code="java"]
+yum install xl2tpd
+yum -Uvh https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/Packages/e/epel-release-8-17.el8.noarch.rpm
+yum install xl2tpd -y
+yum install libreswan xl2tpd  NetworkManager-l2tp -y
+yum install iptables nc  -y
+
+ipsec verify
+[/code]
+vim /etc/xl2tpd/xl2tpd.conf
+只加了
+[code="java"]
+[global]
+ipsec saref = no
+force userspace = yes
+[/code]
+vim /etc/ppp/options.xl2tpd
+改mtu mru 1400
+
+
+新增：
+vim /etc/ipsec.d/l2tp-ipsec.conf
+[code="java"]
+conn L2TP-PSK-NAT
+    rightsubnet=0.0.0.0/0
+    dpddelay=10
+    dpdtimeout=20
+    dpdaction=clear
+    forceencaps=yes
+    also=L2TP-PSK-noNAT
+conn L2TP-PSK-noNAT
+    authby=secret
+    pfs=no
+    auto=add
+    keyingtries=3
+    rekey=no
+    ikelifetime=8h
+    keylife=1h
+    type=transport
+    left=172.31.4.255
+    leftprotoport=17/1701
+    right=%any
+    rightprotoport=17/%any
+[/code]
+left为本机eth0的ip
+
+[code="java"]
+vim /etc/ipsec.d/default.secrets 
+: PSK "Haohao123"
+
+vim /etc/ppp/chap-secrets
+root    *   Haohao123	*
+[/code]
+
+
+cat ipv4.sh
+[code="java"]
+#!/bin/sh
+# from aws to tx ip
+iptables -t nat -A POSTROUTING -s 10.0.4.0/22  -o eth0  -j MASQUERADE
+
+ifconfig eth0 mtu 1400
+ifconfig eth0 promisc
+#ifconfig docker0 mtu 1400
+ifconfig lo mtu 1400
+#ifconfig ppp0 promisc
+#ifconfig ppp1 promisc
+for each in /proc/sys/net/ipv4/conf/*
+do
+    echo 0 > $each/accept_redirects
+    echo 0 > $each/send_redirects
+done
+[/code]
+
+/etc/sysctl.conf
+[code="java"]
+net.ipv4.ip_forward = 1    
+net.ipv4.conf.all.accept_redirects = 0    
+net.ipv4.conf.all.rp_filter = 0    
+net.ipv4.conf.all.send_redirects = 0    
+net.ipv4.conf.default.accept_redirects = 0    
+net.ipv4.conf.default.rp_filter = 0    
+net.ipv4.conf.default.send_redirects = 0    
+net.ipv4.conf.eth0.accept_redirects = 0    
+net.ipv4.conf.eth0.rp_filter = 0    
+net.ipv4.conf.eth0.send_redirects = 0    
+net.ipv4.conf.lo.accept_redirects = 0    
+net.ipv4.conf.lo.rp_filter = 0    
+net.ipv4.conf.lo.send_redirects = 0
+
+[/code]
+
+sysctl -p /etc/sysctl.conf  
+  
+ipsec verify 
+
+
+systemctl start xl2tpd
+systemctl status xl2tpd
+systemctl enable xl2tpd
+systemctl enable ipsec
+
+
+
+[code="java"]
+最关键的问题：
+#在aws
+#route add -host 124.221.230.97 dev eth0 
+#在tx 允许 aws
+route add -host 13.231.175.198 dev eth0 
+
+#在aws
+#route add -net  124.221.230.0 netmask 255.255.255.0 dev eth0  
+#在tx 允许 aws
+#route add -net  13.231.175.0 netmask 255.255.255.0 dev eth0
+[/code]
+
+
+
+
+######## tx 配置 #####################################
+tx:
+cat /etc/redhat-release
+CentOS Linux release 7.6.1810 (Core)
+
+[code="java"]
+yum install xl2tpd
+yum install libreswan xl2tpd  NetworkManager-l2tp -y
+yum install iptables nc  -y
+
+dnf install screen
+
+ipsec verify
+[/code]
+vim /etc/xl2tpd/xl2tpd.conf
+[code="java"]
+[lac testvpn]
+;aws out ip
+lns =  13.231.175.198
+;pppoptfile = /etc/ppp/peers/testvpn.l2tpd
+pppoptfile = /etc/ppp/peers/aws.l2tpd
+ppp debug = yes
+
+[global]
+force userspace = yes
+
+[lns default]
+ip range = 192.168.2.128-192.168.2.254
+local ip = 192.168.2.99
+require chap = yes
+refuse pap = yes
+require authentication = yes
+name = LinuxVPNserver
+ppp debug = yes
+pppoptfile = /etc/ppp/options.xl2tpd
+length bit = yes
+[/code]
+
+
+vim /etc/ppp/peers/aws.l2tpd
+[code="java"]
+remotename testvpn  
+user "root"  
+password "Haohao123"  
+unit 0  
+nodeflate  
+nobsdcomp  
+noauth  
+persist  
+nopcomp  
+noaccomp  
+maxfail 5  
+debug 
+[/code]
+vim /etc/ppp/options.xl2tpd
+指改
+mtu 1400
+mru 1400
+
+
+新增
+vim /etc/ipsec.d/l2tp-ipsec.conf
+[code="java"]
+conn L2TP-PSK-NAT
+    rightsubnet=0.0.0.0/0
+    dpddelay=10
+    dpdtimeout=20
+    dpdaction=clear
+    encapsulation=yes
+    also=L2TP-PSK-noNAT
+conn L2TP-PSK-noNAT
+    authby=secret
+    pfs=no
+    auto=add
+    keyingtries=3
+    rekey=no
+    ikelifetime=8h
+    keylife=1h
+    type=transport
+    left=10.0.4.15
+    leftprotoport=17/1701
+    right=%any
+    rightprotoport=17/%any
+[/code]
+注意left 为tx 的eth0
+
+这个配置ios的时候用到
+[code="java"]
+vim /etc/ipsec.d/default.secrets
+:       PSK     "Haohao123!"
+
+vim /etc/ppp/chap-secrets
+root    *   Haohao123! *
+
+[/code]
+
+ cat ipv4.sh
+[code="java"]
+#!/bin/sh
+iptables -t nat -A POSTROUTING -s 192.168.2.0/24  -o ppp0  -j MASQUERADE
+iptables -t nat -A POSTROUTING -s 10.0.4.0/22  -o eth0  -j MASQUERADE
+ifconfig eth0 mtu 1400
+ifconfig eth0 promisc
+#ifconfig docker0 mtu 1400
+ifconfig lo mtu 1400
+#ifconfig ppp0 promisc
+#ifconfig ppp1 promisc
+for each in /proc/sys/net/ipv4/conf/*
+do
+    echo 0 > $each/accept_redirects
+    echo 0 > $each/send_redirects
+done
+[/code]
+
+/etc/sysctl.conf
+[code="java"]
+net.ipv4.ip_forward = 1    
+net.ipv4.conf.all.accept_redirects = 0    
+net.ipv4.conf.all.rp_filter = 0    
+net.ipv4.conf.all.send_redirects = 0    
+net.ipv4.conf.default.accept_redirects = 0    
+net.ipv4.conf.default.rp_filter = 0    
+net.ipv4.conf.default.send_redirects = 0    
+net.ipv4.conf.eth0.accept_redirects = 0    
+net.ipv4.conf.eth0.rp_filter = 0    
+net.ipv4.conf.eth0.send_redirects = 0    
+net.ipv4.conf.lo.accept_redirects = 0    
+net.ipv4.conf.lo.rp_filter = 0    
+net.ipv4.conf.lo.send_redirects = 0
+
+[/code]
+
+sysctl -p /etc/sysctl.conf  
+  
+ipsec verify 
+
+从tx 验证 aws
+nc -vuz 13.231.175.198 4500
+nc -vuz 13.231.175.198 1701
+
+systemctl start xl2tpd
+systemctl status xl2tpd
+systemctl enable xl2tpd
+systemctl enable ipsec
+
+
+
+##################################
+iptables: 都设置可以访问tx的内网ip
+[code="java"]
+tx ：  
+iptables -t nat -A POSTROUTING -s 10.0.4.0/24  -o eth0  -j MASQUERADE  
+iptables -t nat -A POSTROUTING -s 192.168.2.0/24  -o ppp0  -j MASQUERADE  
+aws:  
+iptables -t nat -A POSTROUTING -s 10.0.4.0/24  -o eth0  -j MASQUERADE 
+[/code]
+
+注意这里 虽然aws的本机段式172.31.12.85
+这个操作是把ppp0 后面的 tx的ip段 172.17.0.13 做了snat
+snat原理参考：
+https://blog.csdn.net/jk110333/article/details/8229828
+
+
+系统 没有firewalld 有NetworkManager
+
+
+#############
+checkppp0.sh
+
+[code="java"]
+#!/bin/sh  
+ppp0=`ifconfig |grep ppp0`  
+if [ ! -n "$ppp0" ] ;then  
+    a="will start vpn"  
+    echo 'c testvpn' > /var/run/xl2tpd/l2tp-control  
+    sleep 5  
+    route del default  
+    ip link set ppp0 up  
+    /usr/sbin/route add default dev ppp0  
+    touch /opt/c  
+else  
+    ip link set ppp0 up  
+    /usr/sbin/route add default dev ppp0  
+    a="noting to do"  
+fi  
+/usr/sbin/ifconfig ppp0  
+  
+echo $a  
+#route add -net  117.136.38.0 netmask 255.255.255.0 dev eth0  
+#ip route get 172.17.0.13
+[/code]
+
+
+cat add_ext.sh
+[code="java"]
+#!/bin/sh
+ [ ! $1 ] && echo "a is null,please use ./add_e.sh ip..." && exit
+
+echo "route will add $1,please check with  ip route "
+#route add -net 117.133.49.0 netmask 255.255.255.0 dev eth0
+#route add -net 212.129.249.0 netmask 255.255.255.0 dev eth0
+
+route add -net  $1 netmask 255.255.255.0 dev eth0
+
+
+[/code]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
