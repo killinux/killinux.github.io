@@ -1,7 +1,7 @@
 xl2tp每年配置一次
 复习一下
 
-[code="java"]
+```
 ios:192.168.2.128
 
 tx:
@@ -9,9 +9,45 @@ tx:
 eth0 10.0.4.15
 
 aws:
-外网：13.231.175.198
-eth0 172.31.4.255
-[/code]
+外网：35.79.219.29
+eth0 172.31.0.151
+```
+
+
+主要内容：
+最关键的问题：
+
+1.checkppp0.sh  
+```
+#建立和aws的链接：
+echo 'c testvpn' > /var/run/xl2tpd/l2tp-control
+
+#里的设置ppp0 为default route，
+route add default dev ppp0
+
+```
+2.手机的ip，需要设置 特列,最后一个数字换成0，为$1,让手机流量可以从 tx的eth0 走，因为 tx的default route要变成ppp0了，这样设置才能让手机连上 tx
+```
+route add -net  $1 netmask 255.255.255.0 dev eth0
+```
+3.设置 tx和 aws的iptables，让流量转发出去。
+```
+tx：
+
+iptables -t nat -A POSTROUTING -s 192.168.2.0/24  -o ppp0  -j MASQUERADE
+#来自 192.168.2.0/24（手机的流量） 与ppp0 交互，ppp0已经是默认 route了，
+
+iptables -t nat -A POSTROUTING -s 10.0.4.0/22  -o eth0  -j MASQUERADE
+#来自 10.0.4.0/22 的 都与 eth0 交互
+
+route add -net  35.79.219.0 netmask 255.255.255.0 dev eth0
+#  这个，让即使 default route 不是eth0 ，也可以 通过 eth0 与 35.79.219.0（aws）有通路
+
+aws:
+iptables -t nat -A POSTROUTING -s 10.0.4.0/22  -o eth0  -j MASQUERADE
+#  让来源 10.0.4.0/22 的流量都可以从eth0 交互出去
+
+```
 
 
 
@@ -21,9 +57,9 @@ tx防火墙，全开
 
 关键点：
 在tx允许aws 
-[code="java"]
-route add -host 13.231.175.198 dev eth0
-[/code]
+```
+#route add -host 35.79.219.29 dev eth0
+```
 
 ####### aws 配置 ############
 aws：
@@ -43,7 +79,7 @@ yum remove firewalld
 yum install xl2tpd
 yum -Uvh https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/Packages/e/epel-release-8-17.el8.noarch.rpm
 yum install xl2tpd -y
-yum install libreswan xl2tpd  NetworkManager-l2tp -y
+yum install libreswan xl2tpd  ip
 yum install iptables nc  -y
 
 ipsec verify
@@ -61,7 +97,7 @@ vim /etc/ppp/options.xl2tpd
 
 新增：
 vim /etc/ipsec.d/l2tp-ipsec.conf
-[code="java"]
+```
 conn L2TP-PSK-NAT
     rightsubnet=0.0.0.0/0
     dpddelay=10
@@ -82,20 +118,19 @@ conn L2TP-PSK-noNAT
     leftprotoport=17/1701
     right=%any
     rightprotoport=17/%any
-[/code]
+```
 left为本机eth0的ip
 
-[code="java"]
+```
 vim /etc/ipsec.d/default.secrets 
 : PSK "Haohao123"
 
 vim /etc/ppp/chap-secrets
 root    *   Haohao123	*
-[/code]
-
+```
 
 cat ipv4.sh
-[code="java"]
+```
 #!/bin/sh
 # from aws to tx ip
 iptables -t nat -A POSTROUTING -s 10.0.4.0/22  -o eth0  -j MASQUERADE
@@ -111,10 +146,10 @@ do
     echo 0 > $each/accept_redirects
     echo 0 > $each/send_redirects
 done
-[/code]
+```
 
 /etc/sysctl.conf
-[code="java"]
+```
 net.ipv4.ip_forward = 1    
 net.ipv4.conf.all.accept_redirects = 0    
 net.ipv4.conf.all.rp_filter = 0    
@@ -129,7 +164,7 @@ net.ipv4.conf.lo.accept_redirects = 0
 net.ipv4.conf.lo.rp_filter = 0    
 net.ipv4.conf.lo.send_redirects = 0
 
-[/code]
+```
 
 sysctl -p /etc/sysctl.conf  
   
@@ -143,18 +178,18 @@ systemctl enable ipsec
 
 
 
-[code="java"]
+```
 最关键的问题：
 #在aws
 #route add -host 124.221.230.97 dev eth0 
 #在tx 允许 aws
-route add -host 13.231.175.198 dev eth0 
+route add -host 35.79.219.29 dev eth0 
 
 #在aws
 #route add -net  124.221.230.0 netmask 255.255.255.0 dev eth0  
 #在tx 允许 aws
 #route add -net  13.231.175.0 netmask 255.255.255.0 dev eth0
-[/code]
+```
 
 
 
@@ -164,7 +199,7 @@ tx:
 cat /etc/redhat-release
 CentOS Linux release 7.6.1810 (Core)
 
-[code="java"]
+```
 yum install xl2tpd
 yum install libreswan xl2tpd  NetworkManager-l2tp -y
 yum install iptables nc  -y
@@ -172,12 +207,12 @@ yum install iptables nc  -y
 dnf install screen
 
 ipsec verify
-[/code]
+```
 vim /etc/xl2tpd/xl2tpd.conf
-[code="java"]
+```
 [lac testvpn]
 ;aws out ip
-lns =  13.231.175.198
+lns = 35.79.219.29
 ;pppoptfile = /etc/ppp/peers/testvpn.l2tpd
 pppoptfile = /etc/ppp/peers/aws.l2tpd
 ppp debug = yes
@@ -195,11 +230,11 @@ name = LinuxVPNserver
 ppp debug = yes
 pppoptfile = /etc/ppp/options.xl2tpd
 length bit = yes
-[/code]
+```
 
 
 vim /etc/ppp/peers/aws.l2tpd
-[code="java"]
+```
 remotename testvpn  
 user "root"  
 password "Haohao123"  
@@ -212,16 +247,16 @@ nopcomp
 noaccomp  
 maxfail 5  
 debug 
-[/code]
+```
 vim /etc/ppp/options.xl2tpd
 指改
-mtu 1400
-mru 1400
+mtu 1410
+mru 1410
 
 
 新增
 vim /etc/ipsec.d/l2tp-ipsec.conf
-[code="java"]
+```
 conn L2TP-PSK-NAT
     rightsubnet=0.0.0.0/0
     dpddelay=10
@@ -242,21 +277,21 @@ conn L2TP-PSK-noNAT
     leftprotoport=17/1701
     right=%any
     rightprotoport=17/%any
-[/code]
+```
 注意left 为tx 的eth0
 
 这个配置ios的时候用到
-[code="java"]
+```
 vim /etc/ipsec.d/default.secrets
 :       PSK     "Haohao123!"
 
 vim /etc/ppp/chap-secrets
 root    *   Haohao123! *
 
-[/code]
+```
 
  cat ipv4.sh
-[code="java"]
+```
 #!/bin/sh
 iptables -t nat -A POSTROUTING -s 192.168.2.0/24  -o ppp0  -j MASQUERADE
 iptables -t nat -A POSTROUTING -s 10.0.4.0/22  -o eth0  -j MASQUERADE
@@ -271,10 +306,10 @@ do
     echo 0 > $each/accept_redirects
     echo 0 > $each/send_redirects
 done
-[/code]
+```
 
 /etc/sysctl.conf
-[code="java"]
+```
 net.ipv4.ip_forward = 1    
 net.ipv4.conf.all.accept_redirects = 0    
 net.ipv4.conf.all.rp_filter = 0    
@@ -289,15 +324,15 @@ net.ipv4.conf.lo.accept_redirects = 0
 net.ipv4.conf.lo.rp_filter = 0    
 net.ipv4.conf.lo.send_redirects = 0
 
-[/code]
+```
 
 sysctl -p /etc/sysctl.conf  
   
 ipsec verify 
 
 从tx 验证 aws
-nc -vuz 13.231.175.198 4500
-nc -vuz 13.231.175.198 1701
+nc -vuz 35.79.219.29 4500
+nc -vuz 35.79.219.29 1701
 
 systemctl start xl2tpd
 systemctl status xl2tpd
@@ -308,13 +343,13 @@ systemctl enable ipsec
 
 ##################################
 iptables: 都设置可以访问tx的内网ip
-[code="java"]
+```
 tx ：  
 iptables -t nat -A POSTROUTING -s 10.0.4.0/24  -o eth0  -j MASQUERADE  
 iptables -t nat -A POSTROUTING -s 192.168.2.0/24  -o ppp0  -j MASQUERADE  
 aws:  
 iptables -t nat -A POSTROUTING -s 10.0.4.0/24  -o eth0  -j MASQUERADE 
-[/code]
+```
 
 注意这里 虽然aws的本机段式172.31.12.85
 这个操作是把ppp0 后面的 tx的ip段 172.17.0.13 做了snat
@@ -328,7 +363,7 @@ https://blog.csdn.net/jk110333/article/details/8229828
 #############
 checkppp0.sh
 
-[code="java"]
+```
 #!/bin/sh  
 ppp0=`ifconfig |grep ppp0`  
 if [ ! -n "$ppp0" ] ;then  
@@ -349,11 +384,11 @@ fi
 echo $a  
 #route add -net  117.136.38.0 netmask 255.255.255.0 dev eth0  
 #ip route get 172.17.0.13
-[/code]
+```
 
 
 cat add_ext.sh
-[code="java"]
+```
 #!/bin/sh
  [ ! $1 ] && echo "a is null,please use ./add_e.sh ip..." && exit
 
@@ -364,7 +399,7 @@ echo "route will add $1,please check with  ip route "
 route add -net  $1 netmask 255.255.255.0 dev eth0
 
 
-[/code]
+```
 
 
 
