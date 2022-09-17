@@ -18,7 +18,7 @@ eth0 172.31.0.151
 最关键的问题：
 
 1.checkppp0.sh  
-```
+``` shell
 #建立和aws的链接：
 echo 'c testvpn' > /var/run/xl2tpd/l2tp-control
 
@@ -27,11 +27,11 @@ route add default dev ppp0
 
 ```
 2.手机的ip，需要设置 特列,最后一个数字换成0，为$1,让手机流量可以从 tx的eth0 走，因为 tx的default route要变成ppp0了，这样设置才能让手机连上 tx
-```
+``` shell
 route add -net  $1 netmask 255.255.255.0 dev eth0
 ```
 3.设置 tx和 aws的iptables，让流量转发出去。
-```
+``` shell
 tx：
 
 iptables -t nat -A POSTROUTING -s 192.168.2.0/24  -o ppp0  -j MASQUERADE
@@ -67,15 +67,15 @@ cat /etc/redhat-release
 Red Hat Enterprise Linux release 8.6 (Ootpa)
 
 ifconfig如果没有
-[code="java"]
+``` shell
 yum install net-tools -y
 yum install iptables -y
 yum install NetworkManager -y
 yum remove firewalld
-[/code]
+```
 
 没有找到
-[code="java"]
+``` shell
 yum install xl2tpd
 yum -Uvh https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/Packages/e/epel-release-8-17.el8.noarch.rpm
 yum install xl2tpd -y
@@ -83,14 +83,14 @@ yum install libreswan xl2tpd  ip
 yum install iptables nc  -y
 
 ipsec verify
-[/code]
+```
 vim /etc/xl2tpd/xl2tpd.conf
 只加了
-[code="java"]
+```
 [global]
 ipsec saref = no
 force userspace = yes
-[/code]
+```
 vim /etc/ppp/options.xl2tpd
 改mtu mru 1400
 
