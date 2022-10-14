@@ -9,7 +9,7 @@ tx:
 eth0 10.0.4.15
 
 aws:
-外网：35.79.219.29
+外网：43.206.109.63 
 eth0 172.31.0.151
 ```
 
@@ -58,7 +58,7 @@ tx防火墙，全开
 关键点：
 在tx允许aws 
 ```
-#route add -host 35.79.219.29 dev eth0
+#route add -host 43.206.109.63 dev eth0
 ```
 
 ####### aws 配置 ############
@@ -68,22 +68,23 @@ Red Hat Enterprise Linux release 8.6 (Ootpa)
 
 ifconfig如果没有
 ``` shell
-yum install net-tools -y
-yum install iptables -y
-yum install NetworkManager -y
+yum install net-tools iptables NetworkManager -y
 yum remove firewalld
 ```
 
 没有找到
 ``` shell
 yum install xl2tpd
-yum -Uvh https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/Packages/e/epel-release-8-17.el8.noarch.rpm
-yum install xl2tpd -y
-yum install libreswan xl2tpd  ip
-yum install iptables nc  -y
+rpm -Uvh https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/Packages/e/epel-release-8-17.el8.noarch.rpm
+yum install xl2tpd libreswan iptables nc -y
 
 ipsec verify
+
+
 ```
+
+
+
 vim /etc/xl2tpd/xl2tpd.conf
 只加了
 ```
@@ -92,7 +93,7 @@ ipsec saref = no
 force userspace = yes
 ```
 vim /etc/ppp/options.xl2tpd
-改mtu mru 1400
+改mtu mru 1410
 
 
 新增：
@@ -114,7 +115,7 @@ conn L2TP-PSK-noNAT
     ikelifetime=8h
     keylife=1h
     type=transport
-    left=172.31.4.255
+    left=172.31.4.64
     leftprotoport=17/1701
     right=%any
     rightprotoport=17/%any
@@ -135,10 +136,10 @@ cat ipv4.sh
 # from aws to tx ip
 iptables -t nat -A POSTROUTING -s 10.0.4.0/22  -o eth0  -j MASQUERADE
 
-ifconfig eth0 mtu 1400
+#ifconfig eth0 mtu 1410
 ifconfig eth0 promisc
-#ifconfig docker0 mtu 1400
-ifconfig lo mtu 1400
+#ifconfig docker0 mtu 1410
+ifconfig lo mtu 1410
 #ifconfig ppp0 promisc
 #ifconfig ppp1 promisc
 for each in /proc/sys/net/ipv4/conf/*
@@ -169,12 +170,16 @@ net.ipv4.conf.lo.send_redirects = 0
 sysctl -p /etc/sysctl.conf  
   
 ipsec verify 
+这里要重启，因为需要 NetworkManager  生效，且xl2tpd 基于NetworkManager
+否则systemctl 启动不了 xl2tpd
 
 
+``` shell
 systemctl start xl2tpd
 systemctl status xl2tpd
 systemctl enable xl2tpd
 systemctl enable ipsec
+```
 
 
 
@@ -183,7 +188,7 @@ systemctl enable ipsec
 #在aws
 #route add -host 124.221.230.97 dev eth0 
 #在tx 允许 aws
-route add -host 35.79.219.29 dev eth0 
+route add -host 43.206.109.63 dev eth0 
 
 #在aws
 #route add -net  124.221.230.0 netmask 255.255.255.0 dev eth0  
@@ -212,7 +217,7 @@ vim /etc/xl2tpd/xl2tpd.conf
 ```
 [lac testvpn]
 ;aws out ip
-lns = 35.79.219.29
+lns = 43.206.109.63
 ;pppoptfile = /etc/ppp/peers/testvpn.l2tpd
 pppoptfile = /etc/ppp/peers/aws.l2tpd
 ppp debug = yes
@@ -231,7 +236,8 @@ ppp debug = yes
 pppoptfile = /etc/ppp/options.xl2tpd
 length bit = yes
 ```
-
+这里配置需要去连的aws的ip
+原理就是 ios --->tx ---> aws
 
 vim /etc/ppp/peers/aws.l2tpd
 ```
@@ -295,10 +301,10 @@ root    *   Haohao123! *
 #!/bin/sh
 iptables -t nat -A POSTROUTING -s 192.168.2.0/24  -o ppp0  -j MASQUERADE
 iptables -t nat -A POSTROUTING -s 10.0.4.0/22  -o eth0  -j MASQUERADE
-ifconfig eth0 mtu 1400
+ifconfig eth0 mtu 1410
 ifconfig eth0 promisc
-#ifconfig docker0 mtu 1400
-ifconfig lo mtu 1400
+#ifconfig docker0 mtu 1410
+ifconfig lo mtu 1410
 #ifconfig ppp0 promisc
 #ifconfig ppp1 promisc
 for each in /proc/sys/net/ipv4/conf/*
@@ -331,15 +337,16 @@ sysctl -p /etc/sysctl.conf
 ipsec verify 
 
 从tx 验证 aws
-nc -vuz 35.79.219.29 4500
-nc -vuz 35.79.219.29 1701
+nc -vuz 43.206.109.63 4500
+nc -vuz 43.206.109.63 1701
 
+``` shell
 systemctl start xl2tpd
 systemctl status xl2tpd
 systemctl enable xl2tpd
 systemctl enable ipsec
 
-
+```
 
 ##################################
 iptables: 都设置可以访问tx的内网ip
