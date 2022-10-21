@@ -9,7 +9,7 @@ tx:
 eth0 10.0.4.15
 
 aws:
-外网：43.206.109.63 
+外网：43.206.119.116 
 eth0 172.31.0.151
 ```
 
@@ -58,7 +58,7 @@ tx防火墙，全开
 关键点：
 在tx允许aws 
 ```
-#route add -host 43.206.109.63 dev eth0
+#route add -host 43.206.119.116 dev eth0
 ```
 
 ####### aws 配置 ############
@@ -188,7 +188,7 @@ systemctl enable ipsec
 #在aws
 #route add -host 124.221.230.97 dev eth0 
 #在tx 允许 aws
-route add -host 43.206.109.63 dev eth0 
+route add -host 43.206.119.116 dev eth0 
 
 #在aws
 #route add -net  124.221.230.0 netmask 255.255.255.0 dev eth0  
@@ -217,7 +217,7 @@ vim /etc/xl2tpd/xl2tpd.conf
 ```
 [lac testvpn]
 ;aws out ip
-lns = 43.206.109.63
+lns = 43.206.119.116
 ;pppoptfile = /etc/ppp/peers/testvpn.l2tpd
 pppoptfile = /etc/ppp/peers/aws.l2tpd
 ppp debug = yes
@@ -337,8 +337,8 @@ sysctl -p /etc/sysctl.conf
 ipsec verify 
 
 从tx 验证 aws
-nc -vuz 43.206.109.63 4500
-nc -vuz 43.206.109.63 1701
+nc -vuz 43.206.119.116 4500
+nc -vuz 43.206.119.116 1701
 
 ``` shell
 systemctl start xl2tpd
@@ -408,7 +408,7 @@ route add -net  $1 netmask 255.255.255.0 dev eth0
 
 ```
 
-
+pstree -a $(pidof xl2tpd)
 
 
 
