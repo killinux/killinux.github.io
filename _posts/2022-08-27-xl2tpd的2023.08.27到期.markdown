@@ -9,7 +9,7 @@ tx:
 eth0 10.0.4.15
 
 aws:
-外网：43.206.119.116 
+外网：43.206.130.32 
 eth0 172.31.0.151
 ```
 
@@ -58,7 +58,7 @@ tx防火墙，全开
 关键点：
 在tx允许aws 
 ```
-#route add -host 43.206.119.116 dev eth0
+#route add -host 43.206.130.32 dev eth0
 ```
 
 ####### aws 配置 ############
@@ -188,7 +188,7 @@ systemctl enable ipsec
 #在aws
 #route add -host 124.221.230.97 dev eth0 
 #在tx 允许 aws
-route add -host 43.206.119.116 dev eth0 
+route add -host 43.206.130.32 dev eth0 
 
 #在aws
 #route add -net  124.221.230.0 netmask 255.255.255.0 dev eth0  
@@ -217,7 +217,7 @@ vim /etc/xl2tpd/xl2tpd.conf
 ```
 [lac testvpn]
 ;aws out ip
-lns = 43.206.119.116
+lns = 43.206.130.32
 ;pppoptfile = /etc/ppp/peers/testvpn.l2tpd
 pppoptfile = /etc/ppp/peers/aws.l2tpd
 ppp debug = yes
@@ -337,8 +337,8 @@ sysctl -p /etc/sysctl.conf
 ipsec verify 
 
 从tx 验证 aws
-nc -vuz 43.206.119.116 4500
-nc -vuz 43.206.119.116 1701
+nc -vuz 43.206.130.32 4500
+nc -vuz 43.206.130.32 1701
 
 ``` shell
 systemctl start xl2tpd
@@ -414,7 +414,47 @@ pstree -a $(pidof xl2tpd)
 
 
 
-
+成功的log
+``` shell
+Oct 24 13:55:30 rb715 systemd[1]: nm-cloud-setup.service: Succeeded.
+Oct 24 13:55:30 rb715 systemd[1]: Started Automatically configure NetworkManager in cloud.
+Oct 24 13:55:50 rb715 xl2tpd[5323]: xl2tpd[5323]: get_call: allocating new tunnel for host 124.221.230.97, port 1701.
+Oct 24 13:55:50 rb715 xl2tpd[5323]: xl2tpd[5323]: Connection established to 124.221.230.97, 1701.  Local: 52533, Remote: 16704 (ref=0/0).  LNS session is 'default'
+Oct 24 13:55:50 rb715 xl2tpd[5323]: xl2tpd[5323]: control_finish: Warning: Peer did not specify transmit speed
+Oct 24 13:55:50 rb715 xl2tpd[5323]: xl2tpd[5323]: Call established with 124.221.230.97, PID: 5333, Local: 10146, Remote: 33023, Serial: 1
+Oct 24 13:55:50 rb715 pppd[5333]: pppd 2.4.7 started by root, uid 0
+Oct 24 13:55:50 rb715 NetworkManager[757]: <info>  [1666619750.2401] manager: (ppp0): new Ppp device (/org/freedesktop/NetworkManager/Devices/4)
+Oct 24 13:55:50 rb715 pppd[5333]: Using interface ppp0
+Oct 24 13:55:50 rb715 pppd[5333]: Connect: ppp0 <--> /dev/pts/2
+Oct 24 13:55:50 rb715 systemd-udevd[5336]: link_config: autonegotiation is unset or enabled, the speed and duplex are not writable.
+Oct 24 13:56:23 rb715 pppd[5333]: IPCP: timeout sending Config-Requests
+Oct 24 13:56:23 rb715 pppd[5333]: Connection terminated.
+Oct 24 13:56:23 rb715 pppd[5333]: Connect time 0.6 minutes.
+Oct 24 13:56:23 rb715 pppd[5333]: Sent 160 bytes, received 13025 bytes.
+Oct 24 13:56:23 rb715 pppd[5333]: Exit.
+Oct 24 13:56:23 rb715 xl2tpd[5323]: xl2tpd[5323]: child_handler : pppd exited for call 33023 with code 10
+Oct 24 13:56:23 rb715 xl2tpd[5323]: xl2tpd[5323]: call_close: Call 10146 to 124.221.230.97 disconnected
+Oct 24 13:59:05 rb715 xl2tpd[5323]: xl2tpd[5323]: control_finish: Warning: Peer did not specify transmit speed
+Oct 24 13:59:05 rb715 xl2tpd[5323]: xl2tpd[5323]: Call established with 124.221.230.97, PID: 5349, Local: 46091, Remote: 55666, Serial: 2
+Oct 24 13:59:05 rb715 pppd[5349]: pppd 2.4.7 started by root, uid 0
+Oct 24 13:59:05 rb715 pppd[5349]: Using interface ppp0
+Oct 24 13:59:05 rb715 pppd[5349]: Connect: ppp0 <--> /dev/pts/2
+Oct 24 13:59:05 rb715 systemd-udevd[5350]: link_config: autonegotiation is unset or enabled, the speed and duplex are not writable.
+Oct 24 13:59:05 rb715 NetworkManager[757]: <info>  [1666619945.9143] manager: (ppp0): new Ppp device (/org/freedesktop/NetworkManager/Devices/5)
+Oct 24 13:59:06 rb715 NetworkManager[757]: <info>  [1666619946.2293] device (ppp0): state change: unmanaged -> unavailable (reason 'connection-assumed', sys-iface-state: 'external')
+Oct 24 13:59:06 rb715 NetworkManager[757]: <info>  [1666619946.2298] device (ppp0): state change: unavailable -> disconnected (reason 'none', sys-iface-state: 'external')
+Oct 24 13:59:06 rb715 pppd[5349]: Cannot determine ethernet address for proxy ARP
+Oct 24 13:59:06 rb715 pppd[5349]: local  IP address 192.168.1.99
+Oct 24 13:59:06 rb715 pppd[5349]: remote IP address 10.0.4.15
+Oct 24 13:59:09 rb715 pppd[5349]: Connect time 0.1 minutes.
+Oct 24 13:59:09 rb715 pppd[5349]: Sent 0 bytes, received 16 bytes.
+Oct 24 13:59:09 rb715 NetworkManager[757]: <info>  [1666619949.2283] device (ppp0): state change: disconnected -> unmanaged (reason 'connection-assumed', sys-iface-state: 'external')
+Oct 24 13:59:09 rb715 pppd[5349]: Cannot determine ethernet address for proxy ARP
+Oct 24 13:59:09 rb715 pppd[5349]: local  IP address 192.168.1.99
+Oct 24 13:59:09 rb715 pppd[5349]: remote IP address 10.0.4.15
+Oct 24 13:59:09 rb715 NetworkManager[757]: <info>  [1666619949.3084] device (ppp0): state change: unmanaged -> unavailable (reason 'connection-assumed', sys-iface-state: 'external')
+Oct 24 13:59:09 rb715 NetworkManager[757]: <info>  [1666619949.3087] device (ppp0): state change: unavailable -> disconnected (reason 'none', sys-iface-state: 'external')
+```
 
 
 
