@@ -456,9 +456,39 @@ Oct 24 13:59:09 rb715 NetworkManager[757]: <info>  [1666619949.3084] device (ppp
 Oct 24 13:59:09 rb715 NetworkManager[757]: <info>  [1666619949.3087] device (ppp0): state change: unavailable -> disconnected (reason 'none', sys-iface-state: 'external')
 ```
 
+error:
+``` shell
+tail -f /var/log/messages
+Oct 29 07:11:47 rb715 xl2tpd[20061]: xl2tpd[20061]: get_call: allocating new tunnel for host 124.221.230.97, port 1701.
+Oct 29 07:11:48 rb715 xl2tpd[20061]: xl2tpd[20061]: get_call: allocating new tunnel for host 124.221.230.97, port 1701.
+Oct 29 07:11:48 rb715 xl2tpd[20061]: xl2tpd[20061]: control_finish: Peer requested tunnel 23798 twice, ignoring second one.
+Oct 29 07:11:48 rb715 xl2tpd[20061]: xl2tpd[20061]: build_fdset: closing down tunnel 22934
+Oct 29 07:11:50 rb715 xl2tpd[20061]: xl2tpd[20061]: get_call: allocating new tunnel for host 124.221.230.97, port 1701.
+Oct 29 07:11:50 rb715 xl2tpd[20061]: xl2tpd[20061]: control_finish: Peer requested tunnel 23798 twice, ignoring second one.
+Oct 29 07:11:50 rb715 xl2tpd[20061]: xl2tpd[20061]: build_fdset: closing down tunnel 21253
+Oct 29 07:11:54 rb715 xl2tpd[20061]: xl2tpd[20061]: get_call: allocating new tunnel for host 124.221.230.97, port 1701.
+Oct 29 07:11:54 rb715 xl2tpd[20061]: xl2tpd[20061]: control_finish: Peer requested tunnel 23798 twice, ignoring second one.
+Oct 29 07:11:54 rb715 xl2tpd[20061]: xl2tpd[20061]: build_fdset: closing down tunnel 14859
+Oct 29 07:12:02 rb715 xl2tpd[20061]: xl2tpd[20061]: get_call: allocating new tunnel for host 124.221.230.97, port 1701.
+Oct 29 07:12:02 rb715 xl2tpd[20061]: xl2tpd[20061]: control_finish: Peer requested tunnel 23798 twice, ignoring second one.
+Oct 29 07:12:02 rb715 xl2tpd[20061]: xl2tpd[20061]: build_fdset: closing down tunnel 26495
+Oct 29 07:12:18 rb715 xl2tpd[20061]: xl2tpd[20061]: Maximum retries exceeded for tunnel 1477.  Closing.
+Oct 29 07:12:18 rb715 xl2tpd[20061]: xl2tpd[20061]: Connection 23798 closed to 124.221.230.97, port 1701 (Timeout)
+Oct 29 07:12:18 rb715 xl2tpd[20061]: xl2tpd[20061]: get_call: allocating new tunnel for host 124.221.230.97, port 1701.
+Oct 29 07:12:18 rb715 xl2tpd[20061]: xl2tpd[20061]: check_control: Received out of order control packet on tunnel -1 (got 1, expected 0)
+Oct 29 07:12:18 rb715 xl2tpd[20061]: xl2tpd[20061]: handle_control: bad control packet!
+Oct 29 07:12:18 rb715 xl2tpd[20061]: xl2tpd[20061]: network_thread: bad packet
+Oct 29 07:12:18 rb715 xl2tpd[20061]: xl2tpd[20061]: build_fdset: closing down tunnel 54334
+Oct 29 07:12:19 rb715 xl2tpd[20061]: xl2tpd[20061]: get_call: allocating new tunnel for host 124.221.230.97, port 1701.
+Oct 29 07:12:19 rb715 xl2tpd[20061]: xl2tpd[20061]: check_control: Received out of order control packet on tunnel -1 (got 1, expected 0)
+Oct 29 07:12:19 rb715 xl2tpd[20061]: xl2tpd[20061]: handle_control: bad control packet!
+Oct 29 07:12:19 rb715 xl2tpd[20061]: xl2tpd[20061]: network_thread: bad packet
 
+```
 
-
+操，找到问题了，mlgb的
+每次断线检查一下aws的 ifconfig 的ip 和 /etc/ipsec.d/l2tp-ipsec.conf 中的left是否一致
+aws的NetworkManager 还是什么会改变内网ip
 
 
 
