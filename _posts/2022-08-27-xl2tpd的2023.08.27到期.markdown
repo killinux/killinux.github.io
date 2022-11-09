@@ -9,7 +9,7 @@ tx:
 eth0 10.0.4.15
 
 aws:
-外网：35.77.230.45 
+外网：18.183.76.10 
 eth0 172.31.0.151
 ```
 
@@ -58,7 +58,7 @@ tx防火墙，全开
 关键点：
 在tx允许aws 
 ```
-#route add -host 35.77.230.45 dev eth0
+#route add -host 18.183.76.10 dev eth0
 ```
 
 ####### aws 配置 ############
@@ -100,7 +100,7 @@ vim /etc/ppp/options.xl2tpd
 
 
 新增：
-vim vi
+vim /etc/ipsec.d/l2tp-ipsec.conf
 ```
 conn L2TP-PSK-NAT
     rightsubnet=0.0.0.0/0
@@ -140,10 +140,10 @@ cat ipv4.sh
 # from aws to tx ip
 iptables -t nat -A POSTROUTING -s 10.0.4.0/22  -o eth0  -j MASQUERADE
 
-#ifconfig eth0 mtu 1410
+#ifconfig eth0 mtu 1500
 ifconfig eth0 promisc
-#ifconfig docker0 mtu 1410
-ifconfig lo mtu 1410
+#ifconfig docker0 mtu 1500
+ifconfig lo mtu 1500
 #ifconfig ppp0 promisc
 #ifconfig ppp1 promisc
 for each in /proc/sys/net/ipv4/conf/*
@@ -153,7 +153,7 @@ do
 done
 ```
 
-v
+vim /etc/sysctl.conf  
 ```
 net.ipv4.ip_forward = 1    
 net.ipv4.conf.all.accept_redirects = 0    
@@ -196,7 +196,7 @@ systemctl enable ipsec
 #在aws
 #route add -host 124.221.230.97 dev eth0 
 #在tx 允许 aws
-route add -host 35.77.230.45 dev eth0 
+route add -host 18.183.76.10 dev eth0 
 
 #在aws
 #route add -net  124.221.230.0 netmask 255.255.255.0 dev eth0  
@@ -225,7 +225,7 @@ vim /etc/xl2tpd/xl2tpd.conf
 ```
 [lac testvpn]
 ;aws out ip
-lns = 35.77.230.45
+lns = 18.183.76.10
 ;pppoptfile = /etc/ppp/peers/testvpn.l2tpd
 pppoptfile = /etc/ppp/peers/aws.l2tpd
 ppp debug = yes
@@ -309,9 +309,9 @@ root    *   Haohao123! *
 #!/bin/sh
 iptables -t nat -A POSTROUTING -s 192.168.2.0/24  -o ppp0  -j MASQUERADE
 iptables -t nat -A POSTROUTING -s 10.0.4.0/22  -o eth0  -j MASQUERADE
-ifconfig eth0 mtu 1410
+ifconfig eth0 mtu 1500
 ifconfig eth0 promisc
-#ifconfig docker0 mtu 1410
+#ifconfig docker0 mtu 1500
 ifconfig lo mtu 1410
 #ifconfig ppp0 promisc
 #ifconfig ppp1 promisc
@@ -345,8 +345,8 @@ sysctl -p /etc/sysctl.conf
 ipsec verify 
 
 从tx 验证 aws
-nc -vuz 35.77.230.45 4500
-nc -vuz 35.77.230.45 1701
+nc -vuz 18.183.76.10 4500
+nc -vuz 18.183.76.10 1701
 
 ``` shell
 systemctl start xl2tpd
