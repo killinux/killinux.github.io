@@ -1,0 +1,35 @@
+ffmpeg -formats | grep dash
+
+ffplay  http://dash.edgesuite.net/dash264/TestCases/1a/netflix/exMPD_BIP_TC1.mpd
+
+测试dash
+
+
+
+
+https://github.com/ffmpegwasm/ffmpeg.wasm
+
+
+git clone git@github.com:ffmpegwasm/ffmpeg.wasm.git
+
+
+npm install @ffmpeg/ffmpeg @ffmpeg/core
+
+npm run build
+
+npm start
+
+
+http://localhost:3000/examples/browser/transcode.html
+
+
+
+dash:
+ffmpeg -i xxx.mp4 -c copy -f dash ./xxxxx/xxxx.mpd
+
+
+todo:
+wasm端上的dash如何做？
+
+
+
