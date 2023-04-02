@@ -33,3 +33,57 @@ wasm端上的dash如何做？
 
 
 
+
+
+
+旋转：
+https://blog.csdn.net/JineD/article/details/125268682
+顺时针90度
+```shell 
+ffmpeg -i mv.mp4 -vf "transpose=1" mv-r90.mp4
+```
+逆时针90度
+```shell 
+ffmpeg -i mv.mp4 -vf "transpose=2" mv-r270.mp4
+```
+垂直
+```shell 
+ffmpeg -i mv.mp4 -vf vflip mv-vflip.mp4
+```
+逆时针旋转90°后再水平翻转
+```shell 
+ffmpeg -i mv.mp4 -vf "transpose=3" mv-trsps3.mp4
+ffmpeg -i mv.mp4 -vf "transpose=2,hflip" mv-r90-hflip.mp4
+```
+旋转180
+```shell 
+ffmpeg -i abc.mp4 -vf "transpose=1,transpose=1" r180.mp4
+```
+拼接
+```shell 
+ffmpeg -i difa.mp4 -vf "transpose=1" difa-r90.mp4
+ffmpeg -i difa.mp4 -vf "transpose=1,hflip" difa-l90.mp4
+ffmpeg -i  difa-l90.mp4 -i  difa-r90.mp4 -filter_complex "[0:v]pad=iw*2:ih*1[a];[a][1:v]overlay=w" out.mp4
+
+ffmpeg -i difa.mp4 -vf vflip difa-vflip.mp4
+ffmpeg -i difa.mp4 -i difa-vflip.mp4 -filter_complex "[0:v]pad=iw:ih*2[a];[a][1:v]overlay=0:h" out.mp4
+```
+拼4个
+```shell 
+ffmpeg -i mv.mp4 -i mv.mp4 -i mv.mp4 -i mv.mp4 -filter_complex "[0:v]pad=iw*3:ih*3[a];[a][1:v]overlay=w:0[b];[b][2:v]overlay=0:h[c];[c][3:v]overlay=w*2:h[d];[d][3:v]overlay=w:h*2" out.mp4
+
+ffmpeg -i mv.mp4 -i mv.mp4 -i mv-r270.mp4 -i mv-r90-hflip.mp4 -i mv-vflip.mp4 -filter_complex "[0:v]pad=ih*2+iw:ih*2+iw[a];[a][1:v]overlay=w:0[b];[b][2:v]overlay=0:h[c];[c][3:v]overlay=w*2:h[d];[d][3:v]overlay=w:h*2" out.mp4
+
+ffmpeg -i mv.mp4 -i mv.mp4 -i mv-r270.mp4 -i mv-r90-hflip.mp4 -i mv-vflip.mp4 -filter_complex "[0:v]pad=ih*2+iw:ih*2+iw[a];[a][1:v]overlay=h:0[b];[b][2:v]overlay=0:w[c];[c][3:v]overlay=h+w:w[d];[d][4:v]overlay=h:h+w" out.mp4
+```
+
+制作360全息视频：./v.sh mv.mp4
+``` shell
+#!/bin/sh
+echo $1
+ffmpeg -i $1 -vf "transpose=2" mv-r270.mp4
+ffmpeg -i $1 -vf "transpose=2,hflip" mv-r90-hflip.mp4
+ffmpeg -i $1 -vf vflip mv-vflip.mp4
+
+ffmpeg -i $1 -i $1 -i mv-r270.mp4 -i mv-r90-hflip.mp4 -i mv-vflip.mp4 -filter_complex "[0:v]pad=ih*2+iw:ih*2+iw[a];[a][1:v]overlay=h:0[b];[b][2:v]overlay=0:w[c];[c][3:v]overlay=h+w:w[d];[d][4:v]overlay=h:h+w" out.mp4
+```
