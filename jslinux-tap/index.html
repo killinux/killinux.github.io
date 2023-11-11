@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+<title>学习修改linux内核</title>
+<style>
+.term {
+    font-family: courier,fixed,swiss,monospace,sans-serif;
+    font-size: 14px;
+    color: #f0f0f0;
+    background: #000000;
+}
+
+.termReverse {
+    color: #000000;
+    background: #00ff00;
+}
+#note {
+    font-size: 12px;
+}
+#copyright {
+    font-size: 10px;
+}
+#clipboard {
+    font-size: 12px;
+}
+</style>
+</head>
+<body onload="start();get_shell();tuntapWS_connect()">
+<h1>学习修改linux内核</h1>
+<table border="0">
+<tr valign="top"><td>
+<script type="text/javascript" src="utils.js"></script>
+<script type="text/javascript" src="term.js"></script>
+<script type="text/javascript" src="cpux86-ta.js"></script>
+<script type="text/javascript" src="Serial.js"></script>
+<script type="text/javascript" src="PIT.js"></script>
+<script type="text/javascript" src="PIC.js"></script>
+<script type="text/javascript" src="CMOS.js"></script>
+<script type="text/javascript" src="KBD.js"></script>
+<script type="text/javascript" src="clipboard.js"></script>
+<script type="text/javascript" src="PCEmulator.js"></script>
+<script type="text/javascript" src="jslinux.js"></script>
+
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" >
+function get_shell(){
+	$.ajax({
+		type: "GET",
+		url: "the_package.sh",
+		success: function(data){
+		//	console.log(data);
+			document.getElementById("text_clipboard").innerHTML=data;
+		}
+	});
+}
+</script>
+
+<script type="text/javascript">
+	tuntap_bufferSize = 100;
+	//tuntap_bufferTimeout = 100;
+	tuntap_bufferTimeout = 10;
+	function tuntap_sendData(data){
+        //if(tuntapZXMPP_talkTo && tuntapZXMPP_talkTo.length){
+		//	tuntapZXMPP_sendData(tuntapZXMPP_talkTo, data);
+		//}
+		tuntapWS_sendData(data);
+	}
+</script>
+<script type="text/javascript" src="js/network-websockets.js"></script>
+from <a href="https://github.com/killinux/jslinux-tap">https://github.com/killinux/jslinux-tap</a>
+
+<td><input type="button" value="Clear clipboard" onclick="clear_clipboard();"><br><textarea row="4" cols="16" id="text_clipboard"></textarea>
+<br>
+	<!-- other commands -->
+	<h1 id="test_serial2">network status</h1>
+<div class="othercommands" style="display:none">
+	<h2 id="hdd_debug" style="display:block">hdd</h1>
+	
+    <input type="button" onclick="get_shell()" value="get shell" />
+    <a href="the_package.sh">package</a>
+    <button onclick="start();">boot</button>
+    <button onclick="start('vmlinux-2.6.20.bin.original');">boot ne2000 kernel</button>
+    <button onclick="tuntapWS_connect();">connect or reconnect websockets</button>
+    </div>
+</table>
+<pre>
+1.浏览器版的linux:  <a href="http://www.hackernel.com/jslinux/jslinux-tap" target="_blank">jslinux</a></br>
+2.一个基于rasa_nlu的简单对话机器人:  <a href="http://www.hackernel.com/im/fchat/bot.html" target="_blank">对话机器人</a></br>
+3.浏览器在线接机游戏:  <a href="http://121.5.59.140/mame/emularity/tengai.html" target="_blank">战国之刃</a></br>
+4.浏览器在线接机游戏:  <a href="http://121.5.59.140/mame/emularity/kof97.html" target="_blank">拳皇1997</a></br>
+4.浏览器在语音识别:  <a href="https://121.5.59.140:8080" target="_blank">英语识别</a></br>
+
+
+
+
+联系我:
+    微博: <a href="https://weibo.com/killinux" target="_blank">linux内核控 https://weibo.com/killinux</a>
+    github:  <a href="https://github.com/killinux" target="_blank">https://github.com/killinux </a>
+    博客: <a href="https://www.iteye.com/blog/user/haoningabc" target="_blank">iteye</a>
+    csdn博客: <a href="https://blog.csdn.net/leafrenchleaf" target="_blank">csdn</a>
+    微信: killinux
+</pre>
+..
+<a style="bottom:10px" href="https://beian.miit.gov.cn/">京ICP备20020920号-1</a>
+</body>
+</html>
+
